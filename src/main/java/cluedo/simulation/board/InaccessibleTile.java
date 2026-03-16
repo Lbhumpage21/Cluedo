@@ -7,7 +7,8 @@ public class InaccessibleTile extends Tile{
         super(x, y);
     }
 
-    public String getConsoleChar() {
+    @Override
+    public String toString() {
         return "XX"; // Represents a wall
     }
 }

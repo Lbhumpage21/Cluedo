@@ -1,4 +1,4 @@
-package cluedo.simulation.entities;
+package cluedo.simulation;
 
 import cluedo.simulation.board.Room;
 

@@ -1,6 +1,6 @@
 package cluedo.simulation.board;
 
-import cluedo.simulation.entities.Player;
+import cluedo.simulation.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +14,7 @@ public class Board {
     private final int ROWS = 25;
 
     public Board() {
-        grid = new Tile[ROWS][COLS];
+        grid = new Tile[COLS][ROWS];
         rooms = new HashMap<>();
 
         // Initialises the rooms
@@ -72,7 +72,6 @@ public class Board {
                 "CCCCCC__BBBBBBBB__KKKKKK",
                 "CCCCCCX___BBBB___XKKKKKK",
                 "XXXXXXXXX_BBBB_XXXXXXXXX",
-
         };
 
         for (int y = 0; y < layout.length; y++) {
@@ -128,14 +127,43 @@ public class Board {
         return rooms.get(roomName);
     }
 
-    public void setPlayerOnHallway(int x, int y, Player player) {
+    public boolean setPlayerOnHallway(int x, int y, Player player) {
         Tile targetTile = getTile(x, y);
 
-        // We only set occupants on Hallways. Rooms handle their own occupants!
+        // Rooms handle their own occupants
         if (targetTile instanceof HallwayTile) {
-            ((HallwayTile) targetTile).setOccupant(player);
-        } else {
-            System.out.println("Error: Cannot place a player directly on a wall or room footprint.");
+            HallwayTile hallway = (HallwayTile) targetTile;
+
+            if (hallway.getOccupant() == null){
+                hallway.setOccupant(player);
+                return true;
+            }
+            else {
+                System.out.println("Move rejected: Tile ["+ x +"]["+ y +"] is occupied");
+                return false;
+            }
         }
+        else {
+            System.out.println("Move rejected: Tile is either a wall or inaccessible tile.");
+            return false;
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (int y = 0; y < ROWS; y++) {
+            for (int x = 0; x < COLS; x++) {
+                Tile tile = getTile(x, y);
+                if (tile != null) {
+                    sb.append(tile.toString()).append(" ");
+                }
+                else {
+                    sb.append("??");
+                }
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 }

@@ -13,5 +13,5 @@ public abstract class Tile {
 
     // Forces subclasses to define how they look as text
     // Just to visualise the board at an early stage, can remove later
-    public abstract String getConsoleChar();
+    public abstract String toString();
 }

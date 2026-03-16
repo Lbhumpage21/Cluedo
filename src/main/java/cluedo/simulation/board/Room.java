@@ -1,6 +1,6 @@
 package cluedo.simulation.board;
 
-import cluedo.simulation.entities.Player;
+import cluedo.simulation.Player;
 
 import java.util.ArrayList;
 import java.util.List;

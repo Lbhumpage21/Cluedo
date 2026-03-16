@@ -1,6 +1,6 @@
 package cluedo.simulation.board;
 
-import cluedo.simulation.entities.Player;
+import cluedo.simulation.Player;
 
 public class HallwayTile extends Tile{
     private Player currentOccupant;
@@ -20,8 +20,8 @@ public class HallwayTile extends Tile{
     public Player getOccupant() {
         return this.currentOccupant;
     }
-
-    public String getConsoleChar() {
+    @Override
+    public String toString() {
         if (isOccupied()) {
             return currentOccupant.getTokenChar() + "_";
         }

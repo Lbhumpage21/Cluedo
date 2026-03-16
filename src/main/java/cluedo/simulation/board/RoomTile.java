@@ -16,8 +16,8 @@ public class RoomTile extends Tile {
     public boolean getIsDoor() {
         return isDoor;
     }
-
-    public String getConsoleChar() {
+    @Override
+    public String toString() {
         if (isDoor) {
             return "[]"; // A door
         }
