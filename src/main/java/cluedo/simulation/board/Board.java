@@ -1,0 +1,141 @@
+package cluedo.simulation.board;
+
+import cluedo.simulation.entities.Player;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class Board {
+    private Tile[][] grid;
+    private Map<String, Room> rooms;
+
+    // Board dimensions
+    private final int COLS = 24;
+    private final int ROWS = 25;
+
+    public Board() {
+        grid = new Tile[ROWS][COLS];
+        rooms = new HashMap<>();
+
+        // Initialises the rooms
+        rooms.put("Kitchen", new Room("Kitchen"));
+        rooms.put("Ballroom", new Room("Ballroom"));
+        rooms.put("Hall", new Room("Hall"));
+        rooms.put("Study", new Room("Study"));
+        rooms.put("Lounge", new Room("Lounge"));
+        rooms.put("Library", new Room("Library"));
+        rooms.put("Dining Room", new Room("Dining Room"));
+        rooms.put("Billiard Room", new Room("Billiard Room"));
+        rooms.put("Conservatory", new Room("Conservatory"));
+
+        setupBoard();
+    }
+
+    /**
+     * Parser for the rooms
+     * K = Kitchen, k = Kitchen door
+     * B = Ballroom, b = Ballroom door
+     * H = Hall , h = Hall door
+     * S = Study, s = Study door
+     * O = Lounge, o = Lounge door
+     * L = Library, l = Library door
+     * D = Dining Room, d = Dining Room door
+     * I = Billiard Room, b = Billiard Room door
+     * C = Conservatory, c = Conservatory door
+     * _ = Hallway,     X = Wall/Inaccessible
+     **/
+
+    private void setupBoard() {
+        String[] layout = {
+                "SSSSSSX_XXHHHHXX_XOOOOOO",
+                "SSSSSSS__HHHHHH__OOOOOOO",
+                "SSSSSSS__HHHHHH__OOOOOOO",
+                "SSSSSSs__HHHHHH__OOOOOOO",
+                "X________hHHHHH__OOOOOOO",
+                "_________HHHHHH__oOOOOOO",
+                "XLLLLL___HHhhHH________X",
+                "LLLLLLL_________________",
+                "LLLLLLl__XXXXX_________X",
+                "LLLLLLL__XXXXX__DdDDDDDD",
+                "XLLlLL___XXXXX__DDDDDDDD",
+                "X________XXXXX__DDDDDDDD",
+                "IiIIII___XXXXX__dDDDDDDD",
+                "IIIIII___XXXXX__DDDDDDDD",
+                "IIIIII___XXXXX__DDDDDDDD",
+                "IIIIIi_____________DDDDD",
+                "IIIIII_________________X",
+                "X_______BbBBBBbB________",
+                "________BBBBBBBB__KkKKKX",
+                "XCCCC___bBBBBBBb__KKKKKK",
+                "CCCCCC__BBBBBBBB__KKKKKK",
+                "CCCCCC__BBBBBBBB__KKKKKK",
+                "CCCCCC__BBBBBBBB__KKKKKK",
+                "CCCCCCX___BBBB___XKKKKKK",
+                "XXXXXXXXX_BBBB_XXXXXXXXX",
+
+        };
+
+        for (int y = 0; y < layout.length; y++) {
+            String row = layout[y];
+            for (int x = 0; x < row.length(); x++){
+                char symbol = row.charAt(x);
+
+                switch (symbol) {
+                    // Basic Tiles
+                    case 'X': grid[x][y] = new InaccessibleTile(x, y);break;
+
+                    case '_': grid[x][y] = new HallwayTile(x, y); break;
+                    // Room Tiles
+                    case 'K': grid[x][y] = new RoomTile(x, y, "Kitchen",false);
+                    case 'B': grid[x][y] = new RoomTile(x, y, "Ballroom",false);
+                    case 'H': grid[x][y] = new RoomTile(x, y, "Hall",false);
+                    case 'S': grid[x][y] = new RoomTile(x, y, "Study",false);
+                    case 'O': grid[x][y] = new RoomTile(x, y, "Lounge",false);
+                    case 'L': grid[x][y] = new RoomTile(x, y, "Library",false);
+                    case 'D': grid[x][y] = new RoomTile(x, y, "Dining Room",false);
+                    case 'I': grid[x][y] = new RoomTile(x, y, "Billiard Room",false);
+                    case 'C': grid[x][y] = new RoomTile(x, y, "Conservatory",false);
+
+                    // Door Tiles
+                    case 'k': grid[x][y] = new RoomTile(x, y, "Kitchen",true);
+                    case 'b': grid[x][y] = new RoomTile(x, y, "Ballroom",true);
+                    case 'h': grid[x][y] = new RoomTile(x, y, "Hall",true);
+                    case 's': grid[x][y] = new RoomTile(x, y, "Study",true);
+                    case 'o': grid[x][y] = new RoomTile(x, y, "Lounge",true);
+                    case 'l': grid[x][y] = new RoomTile(x, y, "Library",true);
+                    case 'd': grid[x][y] = new RoomTile(x, y, "Dining Room",true);
+                    case 'i': grid[x][y] = new RoomTile(x, y, "Billiard Room",true);
+                    case 'c': grid[x][y] = new RoomTile(x, y, "Conservatory",true);
+                }
+            }
+        }
+    }
+    public int getCols() {
+        return COLS;
+    }
+
+    public int getRows() {
+        return ROWS;
+    }
+
+    public Tile getTile(int x, int y) {
+        if (x < 0 || x >= COLS || y < 0 || y >= ROWS) {
+            return null;
+        }
+        return grid[x][y];
+    }
+    public Room getRoom(String roomName) {
+        return rooms.get(roomName);
+    }
+
+    public void setPlayerOnHallway(int x, int y, Player player) {
+        Tile targetTile = getTile(x, y);
+
+        // We only set occupants on Hallways. Rooms handle their own occupants!
+        if (targetTile instanceof HallwayTile) {
+            ((HallwayTile) targetTile).setOccupant(player);
+        } else {
+            System.out.println("Error: Cannot place a player directly on a wall or room footprint.");
+        }
+    }
+}
