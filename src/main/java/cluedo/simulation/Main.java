@@ -1,32 +1,34 @@
 package cluedo.simulation;
 
-import cluedo.simulation.board.Board;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        //Test driver
-        System.out.println("Initialising Cluedo");
 
-        Board board = new Board();
+        GameManager gm = new GameManager();
 
-        Player scarlett = new Player("Miss Scarlett","S", 16, 0);
-        board.setPlayerOnHallway(scarlett.getX(), scarlett.getY(), scarlett);
+        // test driver
 
-        Player mustard = new Player("Colonel Mustard","M", 23, 7);
-        board.setPlayerOnHallway(mustard.getX(), mustard.getY(), mustard);
+        System.out.println(gm.rollDiceForCurrentPlayer());
+        gm.attemptMove(16,1);
+        System.out.println(gm.attemptMove(16,2));
+        System.out.println(gm.attemptMove(16,3));
+        System.out.println(gm.attemptMove(16,4));
+        System.out.println(gm.attemptMove(16,5));
+        System.out.println(gm.attemptMove(17,5));
 
-        Player white = new Player("Mrs White","W", 14, 24);
-        board.setPlayerOnHallway(white.getX(), white.getY(), white);
+        gm.endTurn();
+        gm.endTurn();
+        gm.endTurn();
+        gm.endTurn();
+        gm.endTurn();
+        gm.endTurn();
+        System.out.println(gm.rollDiceForCurrentPlayer());
+        System.out.println(gm.makeSuggestion(gm.getCardFromDatabase("Mr Green"),gm.getCardFromDatabase("Dagger"),gm.getCardFromDatabase("Lounge")));
+        System.out.println(gm.makeAccusation(gm.getCardFromDatabase("Mr Green"), gm.getCardFromDatabase("Dagger"), gm.getCardFromDatabase("Lounge")));
+        gm.endTurn();
 
-        Player green = new Player("Reverend Green","G", 9, 24);
-        board.setPlayerOnHallway(green.getX(), green.getY(), green);
 
-        Player peacock = new Player("Mrs Peacock","E", 0, 18);
-        board.setPlayerOnHallway(peacock.getX(), peacock.getY(), peacock);
 
-        Player plum = new Player("Professor Plum","P", 0, 5);
-        board.setPlayerOnHallway(plum.getX(), plum.getY(), plum);
-
-        System.out.println(board.toString());
     }
 }

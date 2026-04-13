@@ -1,19 +1,22 @@
 package cluedo.simulation.board;
 
 public class RoomTile extends Tile {
-    private String roomName;
+    private Room room;
     private boolean isDoor;
 
-    public RoomTile(int x, int y, String roomName, boolean isDoor) {
+    public RoomTile(int x, int y, Room room, boolean isDoor) {
         super(x, y);
-        this.roomName = roomName;
+        this.room = room;
         this.isDoor = isDoor;
     }
-    public String getRoomName() {
-        return roomName;
+
+    @Override
+    public Room getRoom() {
+        return this.room;
     }
 
-    public boolean getIsDoor() {
+    @Override
+    public boolean isDoor() {
         return isDoor;
     }
     @Override
@@ -22,6 +25,6 @@ public class RoomTile extends Tile {
             return "[]"; // A door
         }
         // Return the first two letters of the room
-        return roomName.substring(0, 2).toUpperCase();
+        return room.getName().substring(0, 2).toUpperCase();
     }
 }

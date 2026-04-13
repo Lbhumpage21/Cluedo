@@ -14,7 +14,9 @@ public class Board {
     private final int ROWS = 25;
 
     public Board() {
+        //creates a 24 by 25 array of tiles
         grid = new Tile[COLS][ROWS];
+
         rooms = new HashMap<>();
 
         // Initialises the rooms
@@ -27,6 +29,13 @@ public class Board {
         rooms.put("Dining Room", new Room("Dining Room"));
         rooms.put("Billiard Room", new Room("Billiard Room"));
         rooms.put("Conservatory", new Room("Conservatory"));
+
+        //setting secret passages
+        rooms.get("Kitchen").setSecretPassage(rooms.get("Study"));
+        rooms.get("Study").setSecretPassage(rooms.get("Kitchen"));
+        rooms.get("Lounge").setSecretPassage(rooms.get("Conservatory"));
+        rooms.get("Conservatory").setSecretPassage(rooms.get("Lounge"));
+
 
         setupBoard();
     }
@@ -66,7 +75,7 @@ public class Board {
                 "IIIIII_________________X",
                 "X_______BbBBBBbB________",
                 "________BBBBBBBB__KkKKKX",
-                "XCCCC___bBBBBBBb__KKKKKK",
+                "XCCCc___bBBBBBBb__KKKKKK",
                 "CCCCCC__BBBBBBBB__KKKKKK",
                 "CCCCCC__BBBBBBBB__KKKKKK",
                 "CCCCCC__BBBBBBBB__KKKKKK",
@@ -82,29 +91,29 @@ public class Board {
                 switch (symbol) {
                     // Basic Tiles
                     case 'X': grid[x][y] = new InaccessibleTile(x, y);break;
-
                     case '_': grid[x][y] = new HallwayTile(x, y); break;
+
                     // Room Tiles
-                    case 'K': grid[x][y] = new RoomTile(x, y, "Kitchen",false);
-                    case 'B': grid[x][y] = new RoomTile(x, y, "Ballroom",false);
-                    case 'H': grid[x][y] = new RoomTile(x, y, "Hall",false);
-                    case 'S': grid[x][y] = new RoomTile(x, y, "Study",false);
-                    case 'O': grid[x][y] = new RoomTile(x, y, "Lounge",false);
-                    case 'L': grid[x][y] = new RoomTile(x, y, "Library",false);
-                    case 'D': grid[x][y] = new RoomTile(x, y, "Dining Room",false);
-                    case 'I': grid[x][y] = new RoomTile(x, y, "Billiard Room",false);
-                    case 'C': grid[x][y] = new RoomTile(x, y, "Conservatory",false);
+                    case 'K': grid[x][y] = new RoomTile(x, y, rooms.get("Kitchen"),false); break;
+                    case 'B': grid[x][y] = new RoomTile(x, y, rooms.get("Ballroom"),false); break;
+                    case 'H': grid[x][y] = new RoomTile(x, y, rooms.get("Hall"),false); break;
+                    case 'S': grid[x][y] = new RoomTile(x, y, rooms.get("Study"),false); break;
+                    case 'O': grid[x][y] = new RoomTile(x, y,  rooms.get("Lounge"),false); break;
+                    case 'L': grid[x][y] = new RoomTile(x, y,  rooms.get("Library"),false); break;
+                    case 'D': grid[x][y] = new RoomTile(x, y,  rooms.get("Dining Room"),false); break;
+                    case 'I': grid[x][y] = new RoomTile(x, y,  rooms.get("Billiard Room"),false); break;
+                    case 'C': grid[x][y] = new RoomTile(x, y,  rooms.get("Conservatory"),false); break;
 
                     // Door Tiles
-                    case 'k': grid[x][y] = new RoomTile(x, y, "Kitchen",true);
-                    case 'b': grid[x][y] = new RoomTile(x, y, "Ballroom",true);
-                    case 'h': grid[x][y] = new RoomTile(x, y, "Hall",true);
-                    case 's': grid[x][y] = new RoomTile(x, y, "Study",true);
-                    case 'o': grid[x][y] = new RoomTile(x, y, "Lounge",true);
-                    case 'l': grid[x][y] = new RoomTile(x, y, "Library",true);
-                    case 'd': grid[x][y] = new RoomTile(x, y, "Dining Room",true);
-                    case 'i': grid[x][y] = new RoomTile(x, y, "Billiard Room",true);
-                    case 'c': grid[x][y] = new RoomTile(x, y, "Conservatory",true);
+                    case 'k': grid[x][y] = new RoomTile(x, y,  rooms.get("Kitchen"),true); break;
+                    case 'b': grid[x][y] = new RoomTile(x, y,  rooms.get("Ballroom"),true); break;
+                    case 'h': grid[x][y] = new RoomTile(x, y,  rooms.get("Hall"),true); break;
+                    case 's': grid[x][y] = new RoomTile(x, y,  rooms.get("Study"),true); break;
+                    case 'o': grid[x][y] = new RoomTile(x, y,  rooms.get("Lounge"),true); break;
+                    case 'l': grid[x][y] = new RoomTile(x, y,  rooms.get("Library"),true); break;
+                    case 'd': grid[x][y] = new RoomTile(x, y,  rooms.get("Dining Room"),true); break;
+                    case 'i': grid[x][y] = new RoomTile(x, y,  rooms.get("Billiard Room"),true); break;
+                    case 'c': grid[x][y] = new RoomTile(x, y,  rooms.get("Conservatory"),true); break;
                 }
             }
         }
@@ -147,6 +156,15 @@ public class Board {
             System.out.println("Move rejected: Tile is either a wall or inaccessible tile.");
             return false;
         }
+    }
+
+    public void clearHallwayTile(int x, int y) {
+        Tile targetTile = grid[x][y];
+        if (targetTile instanceof HallwayTile) {
+            HallwayTile hallway = (HallwayTile) targetTile;
+            hallway.setOccupant(null);
+        }
+
     }
 
     @Override

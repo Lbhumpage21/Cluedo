@@ -14,4 +14,9 @@ public abstract class Tile {
     // Forces subclasses to define how they look as text
     // Just to visualise the board at an early stage, can remove later
     public abstract String toString();
+
+    public boolean isDoor() { return false; }
+    public Room getRoom() {
+        return null;
+    }
 }

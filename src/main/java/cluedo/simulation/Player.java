@@ -2,9 +2,14 @@ package cluedo.simulation;
 
 import cluedo.simulation.board.Room;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Player {
     private String name;
     private String tokenChar; // How they are displayed in the console map
+
+    private List<Card> hand;
 
     private int x;
     private int y;
@@ -12,7 +17,6 @@ public class Player {
 
     private boolean isEliminated;
 
-    //TODO: add list for cards
 
     public Player(String name,String tokenChar, int startX, int startY) {
         this.name = name;
@@ -21,6 +25,7 @@ public class Player {
         this.y = startY;
         this.currentRoom = null;
         this.isEliminated = false;
+        this.hand = new ArrayList<>();
     }
     public String getName() {return name;}
     public String getTokenChar() {return tokenChar;}
@@ -46,6 +51,23 @@ public class Player {
 
     public void setEliminated() {
         this.isEliminated = true;
+    }
+
+    public void receiveCard(Card card) {
+        hand.add(card);
+    }
+
+    public List<Card> getHand() {
+        return hand;
+    }
+
+    public Card disproveSuggestion(Card guessedSuspect, Card guessedWeapon, Card guessedRoom) {
+        for (Card card : hand) {
+            if (card.equals(guessedSuspect) || card.equals(guessedWeapon) || card.equals(guessedRoom)) {
+                return card;
+            }
+        }
+        return null;
     }
 
 }
