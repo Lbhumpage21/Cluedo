@@ -49,7 +49,7 @@ public class Board {
      * O = Lounge, o = Lounge door
      * L = Library, l = Library door
      * D = Dining Room, d = Dining Room door
-     * I = Billiard Room, b = Billiard Room door
+     * I = Billiard Room, i = Billiard Room door
      * C = Conservatory, c = Conservatory door
      * _ = Hallway,     X = Wall/Inaccessible
      **/
@@ -114,6 +114,8 @@ public class Board {
                     case 'd': grid[x][y] = new RoomTile(x, y,  rooms.get("Dining Room"),true); break;
                     case 'i': grid[x][y] = new RoomTile(x, y,  rooms.get("Billiard Room"),true); break;
                     case 'c': grid[x][y] = new RoomTile(x, y,  rooms.get("Conservatory"),true); break;
+
+
                 }
             }
         }
@@ -153,6 +155,9 @@ public class Board {
             }
         }
         else {
+            if (targetTile.isDoor()){
+                return true;
+            }
             System.out.println("Move rejected: Tile is either a wall or inaccessible tile.");
             return false;
         }
@@ -166,6 +171,8 @@ public class Board {
         }
 
     }
+
+
 
     @Override
     public String toString() {

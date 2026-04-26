@@ -11,7 +11,6 @@ public class Room {
     private List<Player> occupants;
     private Room secretPassageDestination;
 
-    //TODO: add weapons list
     public Room(String name) {
         this.name = name;
         this.occupants = new ArrayList<>();

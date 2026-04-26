@@ -1,5 +1,7 @@
 package cluedo.simulation.board;
 
+import cluedo.simulation.Player;
+
 public class RoomTile extends Tile {
     private Room room;
     private boolean isDoor;

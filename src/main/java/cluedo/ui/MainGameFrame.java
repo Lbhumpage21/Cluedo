@@ -3,6 +3,10 @@ package cluedo.ui;
 import cluedo.simulation.Card;
 import cluedo.simulation.GameManager;
 import cluedo.simulation.Player;
+import cluedo.simulation.board.HallwayTile;
+import cluedo.simulation.board.InaccessibleTile;
+import cluedo.simulation.board.RoomTile;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,6 +33,7 @@ public class MainGameFrame extends JFrame {
      * This is still a prototype mapping, not the final real board rendering.
      */
     private Point mapBackendPositionToDisplay(int x, int y) {
+
         if (x == 16 && y == 0) return new Point(1, 0);  // Miss Scarlett
         if (x == 23 && y == 7) return new Point(7, 6);  // Colonel Mustard
         if (x == 14 && y == 24) return new Point(7, 2); // Mrs White
@@ -42,19 +47,19 @@ public class MainGameFrame extends JFrame {
     }
 
     /**
-     * Returns a fixed display point for each room in the simplified GUI board.
+     * Returns a fixed display point for each room in the GUI board.
      */
     private Point getRoomDisplayPoint(String roomName) {
         switch (roomName) {
-            case "Kitchen": return new Point(0, 0);
-            case "Ballroom": return new Point(0, 4);
-            case "Conservatory": return new Point(0, 8);
-            case "Dining Room": return new Point(4, 0);
-            case "Billiard Room": return new Point(4, 4);
-            case "Library": return new Point(4, 8);
-            case "Lounge": return new Point(8, 0);
-            case "Hall": return new Point(8, 4);
-            case "Study": return new Point(8, 8);
+            case "Kitchen": return new Point(20, 20);
+            case "Ballroom": return new Point(11, 20);
+            case "Conservatory": return new Point(2, 21);
+            case "Dining Room": return new Point(19, 12);
+            case "Billiard Room": return new Point(2, 14);
+            case "Library": return new Point(2, 8);
+            case "Lounge": return new Point(20, 2);
+            case "Hall": return new Point(11, 3);
+            case "Study": return new Point(2, 2);
             default: return new Point(4, 4);
         }
     }
@@ -64,14 +69,44 @@ public class MainGameFrame extends JFrame {
      * Current-player highlighting is also based on backend state.
      */
     private void refreshBoard() {
+        // Uses a key to generate a board, matching the one used for backend
+        String[] layout = {
+                "SSSSSSX_XXHHHHXX_XOOOOOO",
+                "SSSSSSS__HHHHHH__OOOOOOO",
+                "SS4SSSS__HHHHHH__OOO5OOO",
+                "SSSSSSs__HH3HHH__OOOOOOO",
+                "X________hHHHHH__OOOOOOO",
+                "_________HHHHHH__oOOOOOO",
+                "XLLLLL___HHhhHH________X",
+                "LLLLLLL_________________",
+                "LL6LLLl__EEEEE_________X",
+                "LLLLLLL__EEEEE__DdDDDDDD",
+                "XLLlLL___EEEEE__DDDDDDDD",
+                "X________EEEEE__DDDDDDDD",
+                "IiIIII___EEEEE__dDD7DDDD",
+                "IIIIII___EEEEE__DDDDDDDD",
+                "II8III___EEEEE__DDDDDDDD",
+                "IIIIIi_____________DDDDD",
+                "IIIIII_________________X",
+                "X_______BbBBBBbB________",
+                "________BBBBBBBB__KkKKKX",
+                "XCCCc___bBBBBBBb__KKKKKK",
+                "CCCCCC__BBB2BBBB__KK1KKK",
+                "CC9CCC__BBBBBBBB__KKKKKK",
+                "CCCCCC__BBBBBBBB__KKKKKK",
+                "CCCCCCX___BBBB___XKKKKKK",
+                "XXXXXXXXX_BBBB_XXXXXXXXX",
+        };
+
         boardPanel.removeAll();
-        boardPanel.setLayout(new GridLayout(9, 9));
+        boardPanel.setLayout(new GridLayout(25, 24));
 
         Player currentPlayer = gameManager.getCurrentPlayer();
         List<Player> allPlayers = gameManager.getPlayers();
 
-        for (int row = 0; row < 9; row++) {
-            for (int col = 0; col < 9; col++) {
+        for (int y = 0; y < 25; y++) {
+            String row = layout[y];
+            for (int x = 0; x < 24; x++){
                 JPanel cell = new JPanel(new BorderLayout());
                 cell.setBackground(Color.WHITE);
 
@@ -82,34 +117,38 @@ public class MainGameFrame extends JFrame {
                 tokenLabel.setFont(new Font("Arial", Font.BOLD, 14));
                 tokenLabel.setForeground(Color.BLACK);
 
-                if (row == 0 && col == 0) {
-                    cell.setBackground(new Color(255, 230, 200));
-                    boardRoomLabel.setText("Kitchen");
-                } else if (row == 0 && col == 4) {
-                    cell.setBackground(new Color(255, 240, 200));
-                    boardRoomLabel.setText("Ballroom");
-                } else if (row == 0 && col == 8) {
-                    cell.setBackground(new Color(220, 255, 220));
-                    boardRoomLabel.setText("Conservatory");
-                } else if (row == 4 && col == 0) {
-                    cell.setBackground(new Color(255, 220, 220));
-                    boardRoomLabel.setText("Dining");
-                } else if (row == 4 && col == 4) {
-                    cell.setBackground(new Color(230, 230, 230));
-                    boardRoomLabel.setText("Center");
-                } else if (row == 4 && col == 8) {
-                    cell.setBackground(new Color(220, 240, 255));
-                    boardRoomLabel.setText("Library");
-                } else if (row == 8 && col == 0) {
-                    cell.setBackground(new Color(255, 220, 255));
-                    boardRoomLabel.setText("Lounge");
-                } else if (row == 8 && col == 4) {
-                    cell.setBackground(new Color(240, 220, 255));
-                    boardRoomLabel.setText("Hall");
-                } else if (row == 8 && col == 8) {
-                    cell.setBackground(new Color(220, 255, 255));
-                    boardRoomLabel.setText("Study");
+                char symbol = row.charAt(x);
+                switch (symbol) {
+                    // Basic Tiles
+                    case 'X': cell.setBackground(Color.BLACK); cell.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY)); break;
+                    case '_': cell.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY)); break;
+
+                        // Room Tiles
+                    case 'K': cell.setBackground(new Color(255, 230, 200)); boardRoomLabel.setText("K"); break;
+                    case 'B': cell.setBackground(new Color(255, 240, 200)); boardRoomLabel.setText("B");  break;
+                    case 'H': cell.setBackground(new Color(240, 220, 255)); boardRoomLabel.setText("H");  break;
+                    case 'S': cell.setBackground(new Color(220, 255, 255)); boardRoomLabel.setText("S");  break;
+                    case 'O': cell.setBackground(new Color(255, 220, 255)); boardRoomLabel.setText("LO");  break;
+                    case 'L': cell.setBackground(new Color(220, 240, 255)); boardRoomLabel.setText("L");  break;
+                    case 'D': cell.setBackground(new Color(255, 220, 220)); boardRoomLabel.setText("D");  break;
+                    case 'I': cell.setBackground(new Color(240, 220, 255)); boardRoomLabel.setText("BI");  break;
+                    case 'C': cell.setBackground(new Color(220, 255, 220)); boardRoomLabel.setText("C");  break;
+                    case 'E': cell.setBackground(new Color(230, 230, 230)); boardRoomLabel.setText("E");  break;
+
+                        // Door Tiles
+                    case 'k': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 'b': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 'h': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 's': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 'o': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 'l': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 'd': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 'i': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+                    case 'c': cell.setBackground(new Color(150, 75, 0)); boardRoomLabel.setText("D"); break;
+
                 }
+
+
 
                 StringBuilder tokensInCell = new StringBuilder();
                 boolean currentPlayerHere = false;
@@ -120,10 +159,10 @@ public class MainGameFrame extends JFrame {
                     if (player.getCurrentRoom() != null) {
                         displayPoint = getRoomDisplayPoint(player.getCurrentRoom().getName());
                     } else {
-                        displayPoint = mapBackendPositionToDisplay(player.getX(), player.getY());
+                        displayPoint = new Point(player.getX(),player.getY());
                     }
 
-                    if (displayPoint.x == row && displayPoint.y == col) {
+                    if (displayPoint.x == x && displayPoint.y == y) {
                         if (tokensInCell.length() > 0) {
                             tokensInCell.append(" ");
                         }
@@ -142,9 +181,8 @@ public class MainGameFrame extends JFrame {
                     cell.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                 } else {
                     tokenLabel.setForeground(Color.BLACK);
-                    cell.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-                }
 
+                }
                 cell.add(boardRoomLabel, BorderLayout.NORTH);
                 cell.add(tokenLabel, BorderLayout.CENTER);
                 boardPanel.add(cell);
@@ -253,15 +291,18 @@ public class MainGameFrame extends JFrame {
      */
     private void handleMove(JButton moveButton) {
         Player currentPlayer = gameManager.getCurrentPlayer();
-
+        if (currentPlayer.getCurrentRoom() != null) {
+            handleLeaveRoom(moveButton);
+            return;
+        }
         int currentX = currentPlayer.getX();
         int currentY = currentPlayer.getY();
 
         String[] options = {
-                "Up (" + (currentX - 1) + "," + currentY + ")",
-                "Down (" + (currentX + 1) + "," + currentY + ")",
-                "Left (" + currentX + "," + (currentY - 1) + ")",
-                "Right (" + currentX + "," + (currentY + 1) + ")"
+                "Up (" + currentX + "," + (currentY - 1) + ")",
+                "Down (" + currentX+ "," + (currentY + 1) + ")",
+                "Left (" + (currentX - 1) + "," + currentY + ")",
+                "Right (" + (currentX + 1) + "," + currentY + ")"
         };
 
         String choice = (String) JOptionPane.showInputDialog(
@@ -285,13 +326,13 @@ public class MainGameFrame extends JFrame {
         int targetY = currentY;
 
         if (choice.startsWith("Up")) {
-            targetX = currentX - 1;
-        } else if (choice.startsWith("Down")) {
-            targetX = currentX + 1;
-        } else if (choice.startsWith("Left")) {
             targetY = currentY - 1;
-        } else if (choice.startsWith("Right")) {
+        } else if (choice.startsWith("Down")) {
             targetY = currentY + 1;
+        } else if (choice.startsWith("Left")) {
+            targetX = currentX - 1;
+        } else if (choice.startsWith("Right")) {
+            targetX = currentX + 1;
         }
 
         boolean moved = gameManager.attemptMove(targetX, targetY);
@@ -303,6 +344,8 @@ public class MainGameFrame extends JFrame {
             if (gameManager.getCurrentPlayer().getCurrentRoom() != null) {
                 appendLog("- " + currentPlayer.getName() + " moved into " +
                         gameManager.getCurrentPlayer().getCurrentRoom().getName());
+
+
             } else {
                 appendLog("- " + currentPlayer.getName() + " moved to (" + targetX + ", " + targetY + ")");
             }
@@ -319,6 +362,35 @@ public class MainGameFrame extends JFrame {
                             "Spaces remaining: " + gameManager.getSpacesRemaining()
             );
         }
+    }
+
+    private void handleLeaveRoom(JButton moveButton) {
+        Player currentPlayer = gameManager.getCurrentPlayer();
+        String roomName = currentPlayer.getCurrentRoom().getName();
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "You are in the " + roomName + " Would you like to leave?",
+                "Leave Room",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+            boolean left = gameManager.leaveRoom();
+            if (left) {
+            refreshCurrentPlayerInfo();
+            refreshBoard();}
+            appendLog("- " + currentPlayer.getName() + " left the " + roomName);
+            if (gameManager.getSpacesRemaining() == 0) {
+                moveButton.setEnabled(false);
+            }
+
+        } else {
+            appendLog("- " + currentPlayer.getName() + " could not leave " + roomName);
+        }
+
+
+
+
     }
 
     /**
@@ -557,7 +629,7 @@ public class MainGameFrame extends JFrame {
         setLayout(new BorderLayout(10, 10));
 
         // Board area
-        boardPanel = new JPanel(new GridLayout(9, 9));
+        boardPanel = new JPanel(new GridLayout(25, 24));
         boardPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Game Board"),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)

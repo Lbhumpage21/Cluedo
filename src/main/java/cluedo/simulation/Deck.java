@@ -45,7 +45,7 @@ public class Deck {
         list.add(new Card("Miss Scarlett", Card.TYPE_SUSPECT));
         list.add(new Card("Colonel Mustard", Card.TYPE_SUSPECT));
         list.add(new Card("Mrs White", Card.TYPE_SUSPECT));
-        list.add(new Card("Mr Green", Card.TYPE_SUSPECT));
+        list.add(new Card("Reverend Green", Card.TYPE_SUSPECT));
         list.add(new Card("Mrs Peacock", Card.TYPE_SUSPECT));
         list.add(new Card("Professor Plum", Card.TYPE_SUSPECT));
         return list;

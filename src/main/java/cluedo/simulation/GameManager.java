@@ -109,23 +109,6 @@ public class GameManager {
             return false;
         }
 
-        int distanceX = Math.abs(targetX - oldX);
-        int distanceY = Math.abs(targetY - oldY);
-        boolean isAdjacent = (distanceX + distanceY) == 1;
-
-        if (!isAdjacent) {
-            if (currentPlayer.getCurrentRoom() != null && targetTile.isDoor()) {
-                RoomTile targetDoor = (RoomTile) targetTile;
-
-                if (currentPlayer.getCurrentRoom().getName().equals(targetDoor.getRoom().getName())) {
-                    currentPlayer.setRoom(null);
-                    currentPlayer.setCoordinates(targetX, targetY);
-                    return true;
-                }
-                return false;
-            }
-            return false;
-        }
 
         if (targetTile.isDoor()) {
             System.out.println(currentPlayer.getName() + " has entered " + targetTile.getRoom().getName());
@@ -307,7 +290,45 @@ public class GameManager {
         return null;
     }
 
+    // Decides where a player goes when exiting a room
+    public boolean leaveRoom() {
+        Player currentPlayer = getCurrentPlayer();
+        if (currentPlayer.getCurrentRoom() == null) {return false;}
+
+        int[] door = getDoorForRoom(currentPlayer.getCurrentRoom().getName());
+        if (door == null) {return false;}
+            boolean moveAllowed = board.setPlayerOnHallway(door[0], door[1], currentPlayer);
+            if (moveAllowed) {
+                currentPlayer.setRoom(null);
+                currentPlayer.setCoordinates(door[0], door[1]);
+                spacesRemaining--;
+                return true;
+            }
+            return false;
+    }
+
+    private int[] getDoorForRoom(String roomName) {
+        switch (roomName) {
+            case "Study":         return new int[]{6, 3};
+            case "Hall":          return new int[]{9, 4};
+            case "Lounge":        return new int[]{17, 5};
+            case "Library":       return new int[]{6, 8};
+            case "Billiard Room": return new int[]{1, 12};
+            case "Dining Room":   return new int[]{17, 9};
+            case "Ballroom":      return new int[]{7, 17};
+            case "Kitchen":       return new int[]{18, 18};
+            case "Conservatory":  return new int[]{3, 19};
+            default: return null;
+        }
+    }
+
+
+
+
     public Card getCardFromDatabase(String cardName) {
         return deck.getCard(cardName);
     }
+
+
+
 }
