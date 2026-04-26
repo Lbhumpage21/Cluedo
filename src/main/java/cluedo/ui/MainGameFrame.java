@@ -1,7 +1,12 @@
 package cluedo.ui;
 
+import cluedo.simulation.Card;
+import cluedo.simulation.GameManager;
+import cluedo.simulation.Player;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 /**
  * Main GUI window for the Cluedo prototype.
@@ -17,33 +22,61 @@ public class MainGameFrame extends JFrame {
     private JTextArea logArea;
     private JTextArea cardsArea;
 
-    private String[] players = {"Jacob", "Jiapei", "Luca", "Hadinbh", "Mohammad"};
-    private String[] playerTokens = {"J", "Ji", "L", "H", "M"};
-    private final int[] currentPlayerIndex = {0};
-    private final int[] currentDiceRoll = {0};
-    private final int[][] playerPositions = {
-            {1, 0},
-            {1, 4},
-            {1, 8},
-            {7, 2},
-            {7, 6}
-    };
+    private GameManager gameManager;
 
     /**
-     * Refreshes the board display based on the current player positions.
-     * Room tiles and player tokens are redrawn whenever the board state changes.
+     * Maps backend board coordinates to the simplified 9x9 GUI prototype board.
+     * This is still a prototype mapping, not the final real board rendering.
+     */
+    private Point mapBackendPositionToDisplay(int x, int y) {
+        if (x == 16 && y == 0) return new Point(1, 0);  // Miss Scarlett
+        if (x == 23 && y == 7) return new Point(7, 6);  // Colonel Mustard
+        if (x == 14 && y == 24) return new Point(7, 2); // Mrs White
+        if (x == 9 && y == 24) return new Point(1, 4);  // Reverend Green
+        if (x == 0 && y == 18) return new Point(0, 8);  // Mrs Peacock
+        if (x == 0 && y == 5) return new Point(8, 4);   // Professor Plum
+
+        if (x < 8 && y < 8) return new Point(Math.max(0, x), Math.max(0, y));
+
+        return new Point(4, 4);
+    }
+
+    /**
+     * Returns a fixed display point for each room in the simplified GUI board.
+     */
+    private Point getRoomDisplayPoint(String roomName) {
+        switch (roomName) {
+            case "Kitchen": return new Point(0, 0);
+            case "Ballroom": return new Point(0, 4);
+            case "Conservatory": return new Point(0, 8);
+            case "Dining Room": return new Point(4, 0);
+            case "Billiard Room": return new Point(4, 4);
+            case "Library": return new Point(4, 8);
+            case "Lounge": return new Point(8, 0);
+            case "Hall": return new Point(8, 4);
+            case "Study": return new Point(8, 8);
+            default: return new Point(4, 4);
+        }
+    }
+
+    /**
+     * Refreshes the board display based on backend player data.
+     * Current-player highlighting is also based on backend state.
      */
     private void refreshBoard() {
         boardPanel.removeAll();
         boardPanel.setLayout(new GridLayout(9, 9));
+
+        Player currentPlayer = gameManager.getCurrentPlayer();
+        List<Player> allPlayers = gameManager.getPlayers();
 
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
                 JPanel cell = new JPanel(new BorderLayout());
                 cell.setBackground(Color.WHITE);
 
-                JLabel roomLabel = new JLabel("", SwingConstants.CENTER);
-                roomLabel.setFont(new Font("Arial", Font.BOLD, 11));
+                JLabel boardRoomLabel = new JLabel("", SwingConstants.CENTER);
+                boardRoomLabel.setFont(new Font("Arial", Font.BOLD, 11));
 
                 JLabel tokenLabel = new JLabel("", SwingConstants.CENTER);
                 tokenLabel.setFont(new Font("Arial", Font.BOLD, 14));
@@ -51,44 +84,52 @@ public class MainGameFrame extends JFrame {
 
                 if (row == 0 && col == 0) {
                     cell.setBackground(new Color(255, 230, 200));
-                    roomLabel.setText("Kitchen");
+                    boardRoomLabel.setText("Kitchen");
                 } else if (row == 0 && col == 4) {
                     cell.setBackground(new Color(255, 240, 200));
-                    roomLabel.setText("Ballroom");
+                    boardRoomLabel.setText("Ballroom");
                 } else if (row == 0 && col == 8) {
                     cell.setBackground(new Color(220, 255, 220));
-                    roomLabel.setText("Conservatory");
+                    boardRoomLabel.setText("Conservatory");
                 } else if (row == 4 && col == 0) {
                     cell.setBackground(new Color(255, 220, 220));
-                    roomLabel.setText("Dining");
+                    boardRoomLabel.setText("Dining");
                 } else if (row == 4 && col == 4) {
                     cell.setBackground(new Color(230, 230, 230));
-                    roomLabel.setText("Center");
+                    boardRoomLabel.setText("Center");
                 } else if (row == 4 && col == 8) {
                     cell.setBackground(new Color(220, 240, 255));
-                    roomLabel.setText("Library");
+                    boardRoomLabel.setText("Library");
                 } else if (row == 8 && col == 0) {
                     cell.setBackground(new Color(255, 220, 255));
-                    roomLabel.setText("Lounge");
+                    boardRoomLabel.setText("Lounge");
                 } else if (row == 8 && col == 4) {
                     cell.setBackground(new Color(240, 220, 255));
-                    roomLabel.setText("Hall");
+                    boardRoomLabel.setText("Hall");
                 } else if (row == 8 && col == 8) {
                     cell.setBackground(new Color(220, 255, 255));
-                    roomLabel.setText("Study");
+                    boardRoomLabel.setText("Study");
                 }
 
                 StringBuilder tokensInCell = new StringBuilder();
                 boolean currentPlayerHere = false;
 
-                for (int i = 0; i < playerPositions.length; i++) {
-                    if (playerPositions[i][0] == row && playerPositions[i][1] == col) {
+                for (Player player : allPlayers) {
+                    Point displayPoint;
+
+                    if (player.getCurrentRoom() != null) {
+                        displayPoint = getRoomDisplayPoint(player.getCurrentRoom().getName());
+                    } else {
+                        displayPoint = mapBackendPositionToDisplay(player.getX(), player.getY());
+                    }
+
+                    if (displayPoint.x == row && displayPoint.y == col) {
                         if (tokensInCell.length() > 0) {
                             tokensInCell.append(" ");
                         }
-                        tokensInCell.append(playerTokens[i]);
+                        tokensInCell.append(player.getTokenChar());
 
-                        if (i == currentPlayerIndex[0]) {
+                        if (player.getName().equals(currentPlayer.getName())) {
                             currentPlayerHere = true;
                         }
                     }
@@ -98,17 +139,13 @@ public class MainGameFrame extends JFrame {
 
                 if (currentPlayerHere) {
                     tokenLabel.setForeground(Color.RED);
-                } else {
-                    tokenLabel.setForeground(Color.BLACK);
-                }
-
-                if (currentPlayerHere) {
                     cell.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                 } else {
+                    tokenLabel.setForeground(Color.BLACK);
                     cell.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
                 }
 
-                cell.add(roomLabel, BorderLayout.NORTH);
+                cell.add(boardRoomLabel, BorderLayout.NORTH);
                 cell.add(tokenLabel, BorderLayout.CENTER);
                 boardPanel.add(cell);
             }
@@ -116,6 +153,21 @@ public class MainGameFrame extends JFrame {
 
         boardPanel.revalidate();
         boardPanel.repaint();
+    }
+
+    private JLabel createSectionTitle(String text) {
+        JLabel title = new JLabel(text);
+        title.setFont(new Font("SansSerif", Font.BOLD, 16));
+        title.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+        return title;
+    }
+
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.BOLD, 14));
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(140, 38));
+        return button;
     }
 
     /**
@@ -162,45 +214,342 @@ public class MainGameFrame extends JFrame {
     }
 
     /**
-     * Returns the room name for a given board position.
-     * If the position does not match a room tile, "Hallway" is returned.
+     * Builds the card display text for the current player using backend data.
      */
-    private String getRoomNameFromPosition(int row, int col) {
-        if (row == 0 && col == 0) return "Kitchen";
-        if (row == 0 && col == 4) return "Ballroom";
-        if (row == 0 && col == 8) return "Conservatory";
-        if (row == 4 && col == 0) return "Dining Room";
-        if (row == 4 && col == 4) return "Billiard Room";
-        if (row == 4 && col == 8) return "Library";
-        if (row == 8 && col == 0) return "Lounge";
-        if (row == 8 && col == 4) return "Hall";
-        if (row == 8 && col == 8) return "Study";
-        return "Hallway";
+    private String buildCardsTextForCurrentPlayer() {
+        Player currentPlayer = gameManager.getCurrentPlayer();
+        List<Card> hand = currentPlayer.getHand();
+
+        if (hand == null || hand.isEmpty()) {
+            return "- No cards";
+        }
+
+        StringBuilder cardsText = new StringBuilder();
+        for (Card card : hand) {
+            cardsText.append("- ").append(card.getName()).append("\n");
+        }
+        return cardsText.toString();
     }
 
-    private JLabel createSectionTitle(String text) {
-        JLabel title = new JLabel(text);
-        title.setFont(new Font("SansSerif", Font.BOLD, 16));
-        title.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
-        return title;
+    /**
+     * Updates the player label, room label, and cards area from backend data.
+     */
+    private void refreshCurrentPlayerInfo() {
+        Player currentPlayer = gameManager.getCurrentPlayer();
+
+        updatePlayerLabel(currentPlayer.getName());
+
+        if (currentPlayer.getCurrentRoom() != null) {
+            updateRoomLabel(currentPlayer.getCurrentRoom().getName());
+        } else {
+            updateRoomLabel("Hallway");
+        }
+
+        updateCardsDisplay(buildCardsTextForCurrentPlayer());
     }
 
-    private JButton createStyledButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("SansSerif", Font.BOLD, 14));
-        button.setFocusPainted(false);
-        button.setPreferredSize(new Dimension(140, 38));
-        return button;
+    /**
+     * Lets the player choose one of the four adjacent backend coordinates.
+     */
+    private void handleMove(JButton moveButton) {
+        Player currentPlayer = gameManager.getCurrentPlayer();
+
+        int currentX = currentPlayer.getX();
+        int currentY = currentPlayer.getY();
+
+        String[] options = {
+                "Up (" + (currentX - 1) + "," + currentY + ")",
+                "Down (" + (currentX + 1) + "," + currentY + ")",
+                "Left (" + currentX + "," + (currentY - 1) + ")",
+                "Right (" + currentX + "," + (currentY + 1) + ")"
+        };
+
+        String choice = (String) JOptionPane.showInputDialog(
+                this,
+                "Current player: " + currentPlayer.getName() + "\n" +
+                        "Current backend position: (" + currentX + ", " + currentY + ")\n" +
+                        "Spaces remaining: " + gameManager.getSpacesRemaining() + "\n\n" +
+                        "Choose a direction to try:",
+                "Move",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        if (choice == null) {
+            return;
+        }
+
+        int targetX = currentX;
+        int targetY = currentY;
+
+        if (choice.startsWith("Up")) {
+            targetX = currentX - 1;
+        } else if (choice.startsWith("Down")) {
+            targetX = currentX + 1;
+        } else if (choice.startsWith("Left")) {
+            targetY = currentY - 1;
+        } else if (choice.startsWith("Right")) {
+            targetY = currentY + 1;
+        }
+
+        boolean moved = gameManager.attemptMove(targetX, targetY);
+
+        if (moved) {
+            refreshCurrentPlayerInfo();
+            refreshBoard();
+
+            if (gameManager.getCurrentPlayer().getCurrentRoom() != null) {
+                appendLog("- " + currentPlayer.getName() + " moved into " +
+                        gameManager.getCurrentPlayer().getCurrentRoom().getName());
+            } else {
+                appendLog("- " + currentPlayer.getName() + " moved to (" + targetX + ", " + targetY + ")");
+            }
+
+            if (gameManager.getSpacesRemaining() == 0) {
+                moveButton.setEnabled(false);
+            }
+        } else {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Move not allowed.\n" +
+                            "Try another adjacent direction.\n" +
+                            "Current position: (" + currentPlayer.getX() + ", " + currentPlayer.getY() + ")\n" +
+                            "Spaces remaining: " + gameManager.getSpacesRemaining()
+            );
+        }
     }
 
-    private JPanel createRightSectionPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        return panel;
+    /**
+     * Testing helper: instantly puts the current player into a selected room.
+     */
+    private void handleEnterTestRoom() {
+        String[] rooms = {
+                "Kitchen",
+                "Ballroom",
+                "Conservatory",
+                "Dining Room",
+                "Billiard Room",
+                "Library",
+                "Lounge",
+                "Hall",
+                "Study"
+        };
+
+        String selectedRoom = (String) JOptionPane.showInputDialog(
+                this,
+                "Select a room for testing:",
+                "Enter Test Room",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                rooms,
+                rooms[0]
+        );
+
+        if (selectedRoom == null) {
+            return;
+        }
+
+        boolean success = gameManager.forceCurrentPlayerIntoRoom(selectedRoom);
+
+        if (success) {
+            refreshCurrentPlayerInfo();
+            refreshBoard();
+            appendLog("- " + gameManager.getCurrentPlayer().getName() + " was placed into " + selectedRoom + " for testing.");
+        } else {
+            JOptionPane.showMessageDialog(this, "Could not place player into room.");
+        }
+    }
+
+    /**
+     * Uses backend suggestion logic.
+     */
+    private void handleSuggestion() {
+        Player currentPlayer = gameManager.getCurrentPlayer();
+
+        if (currentPlayer.getCurrentRoom() == null) {
+            JOptionPane.showMessageDialog(this, "You must be in a room to make a suggestion.");
+            return;
+        }
+
+        String[] suspects = {
+                "Miss Scarlett",
+                "Colonel Mustard",
+                "Mrs White",
+                "Reverend Green",
+                "Mrs Peacock",
+                "Professor Plum"
+        };
+
+        String[] weapons = {
+                "Candlestick",
+                "Dagger",
+                "Lead Pipe",
+                "Revolver",
+                "Rope",
+                "Spanner"
+        };
+
+        JComboBox<String> suspectBox = new JComboBox<>(suspects);
+        JComboBox<String> weaponBox = new JComboBox<>(weapons);
+
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+        panel.add(new JLabel("Select a suspect:"));
+        panel.add(suspectBox);
+        panel.add(new JLabel("Select a weapon:"));
+        panel.add(weaponBox);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Make a Suggestion",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result == JOptionPane.OK_OPTION) {
+            String selectedSuspect = (String) suspectBox.getSelectedItem();
+            String selectedWeapon = (String) weaponBox.getSelectedItem();
+            String currentRoomName = currentPlayer.getCurrentRoom().getName();
+
+            Card suspectCard = gameManager.getCardFromDatabase(selectedSuspect);
+            Card weaponCard = gameManager.getCardFromDatabase(selectedWeapon);
+            Card roomCard = gameManager.getCardFromDatabase(currentRoomName);
+
+            Card revealedCard = gameManager.makeSuggestion(suspectCard, weaponCard, roomCard);
+
+            if (revealedCard != null) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Suggestion made.\nRevealed card: " + revealedCard.getName(),
+                        "Suggestion Result",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+                appendLog("- " + currentPlayer.getName()
+                        + " suggested " + selectedSuspect
+                        + " with the " + selectedWeapon
+                        + " in the " + currentRoomName
+                        + ". Revealed: " + revealedCard.getName());
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Suggestion made.\nNobody could disprove it.",
+                        "Suggestion Result",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+                appendLog("- " + currentPlayer.getName()
+                        + " suggested " + selectedSuspect
+                        + " with the " + selectedWeapon
+                        + " in the " + currentRoomName
+                        + ". Nobody could disprove it.");
+            }
+
+            refreshCurrentPlayerInfo();
+            refreshBoard();
+        }
+    }
+
+    /**
+     * Uses backend accusation logic.
+     */
+    private void handleAccusation() {
+        Player currentPlayer = gameManager.getCurrentPlayer();
+
+        if (currentPlayer.getCurrentRoom() == null) {
+            JOptionPane.showMessageDialog(this, "You must be in a room to make an accusation.");
+            return;
+        }
+
+        String[] suspects = {
+                "Miss Scarlett",
+                "Colonel Mustard",
+                "Mrs White",
+                "Reverend Green",
+                "Mrs Peacock",
+                "Professor Plum"
+        };
+
+        String[] weapons = {
+                "Candlestick",
+                "Dagger",
+                "Lead Pipe",
+                "Revolver",
+                "Rope",
+                "Spanner"
+        };
+
+        String[] rooms = {
+                "Kitchen",
+                "Ballroom",
+                "Conservatory",
+                "Dining Room",
+                "Billiard Room",
+                "Library",
+                "Lounge",
+                "Hall",
+                "Study"
+        };
+
+        JComboBox<String> suspectBox = new JComboBox<>(suspects);
+        JComboBox<String> weaponBox = new JComboBox<>(weapons);
+        JComboBox<String> roomBox = new JComboBox<>(rooms);
+
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+        panel.add(new JLabel("Select a suspect:"));
+        panel.add(suspectBox);
+        panel.add(new JLabel("Select a weapon:"));
+        panel.add(weaponBox);
+        panel.add(new JLabel("Select a room:"));
+        panel.add(roomBox);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Make an Accusation",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result == JOptionPane.OK_OPTION) {
+            String selectedSuspect = (String) suspectBox.getSelectedItem();
+            String selectedWeapon = (String) weaponBox.getSelectedItem();
+            String selectedRoom = (String) roomBox.getSelectedItem();
+
+            Card suspectCard = gameManager.getCardFromDatabase(selectedSuspect);
+            Card weaponCard = gameManager.getCardFromDatabase(selectedWeapon);
+            Card roomCard = gameManager.getCardFromDatabase(selectedRoom);
+
+            boolean correct = gameManager.makeAccusation(suspectCard, weaponCard, roomCard);
+
+            if (correct) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        currentPlayer.getName() + " solved the murder and won the game!",
+                        "Game Over",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                appendLog("- " + currentPlayer.getName() + " made a correct accusation and won the game.");
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        currentPlayer.getName() + " made an incorrect accusation and was eliminated.",
+                        "Accusation Result",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                appendLog("- " + currentPlayer.getName() + " made an incorrect accusation and was eliminated.");
+            }
+
+            refreshCurrentPlayerInfo();
+            refreshBoard();
+        }
     }
 
     public MainGameFrame() {
+        gameManager = new GameManager();
+
         setTitle("Cluedo");
         setSize(1000, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -224,13 +573,17 @@ public class MainGameFrame extends JFrame {
                 BorderFactory.createEmptyBorder(12, 12, 12, 12)
         ));
 
-        playerLabel = new JLabel("Current Player: " + players[currentPlayerIndex[0]]);
+        playerLabel = new JLabel("Current Player: " + gameManager.getCurrentPlayer().getName());
         playerLabel.setFont(new Font("SansSerif", Font.BOLD, 15));
 
         diceLabel = new JLabel("Dice Roll: -");
         diceLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
 
-        roomLabel = new JLabel("Current Room: Kitchen");
+        if (gameManager.getCurrentPlayer().getCurrentRoom() != null) {
+            roomLabel = new JLabel("Current Room: " + gameManager.getCurrentPlayer().getCurrentRoom().getName());
+        } else {
+            roomLabel = new JLabel("Current Room: Hallway");
+        }
         roomLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
 
         logArea = new JTextArea(8, 20);
@@ -238,22 +591,15 @@ public class MainGameFrame extends JFrame {
         logArea.setFont(new Font("SansSerif", Font.PLAIN, 13));
         logArea.setLineWrap(true);
         logArea.setWrapStyleWord(true);
-        logArea.setText("- Game started\n- Current player: " + players[currentPlayerIndex[0]] + "\n");
+        logArea.setText("- Game started\n- Current player: " + gameManager.getCurrentPlayer().getName() + "\n");
         JScrollPane logScrollPane = new JScrollPane(logArea);
-        JScrollBar logScrollBar = logScrollPane.getVerticalScrollBar();
 
         cardsArea = new JTextArea(6, 20);
         cardsArea.setEditable(false);
         cardsArea.setFont(new Font("SansSerif", Font.PLAIN, 13));
         cardsArea.setLineWrap(true);
         cardsArea.setWrapStyleWord(true);
-        cardsArea.setText(
-                // Temporary hardcoded cards for GUI testing.
-                // This should later be replaced with the actual player hand.
-                "- Miss Scarlett\n" +
-                        "- Rope\n" +
-                        "- Kitchen\n"
-        );
+        cardsArea.setText(buildCardsTextForCurrentPlayer());
         JScrollPane cardsScrollPane = new JScrollPane(cardsArea);
 
         infoPanel.add(playerLabel);
@@ -272,7 +618,7 @@ public class MainGameFrame extends JFrame {
 
         // Control area
         JPanel controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayout(2, 4, 12, 12));
+        controlPanel.setLayout(new GridLayout(2, 5, 12, 12));
         controlPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Actions"),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -280,6 +626,7 @@ public class MainGameFrame extends JFrame {
 
         JButton rollButton = createStyledButton("Roll Dice");
         JButton moveButton = createStyledButton("Move");
+        JButton testRoomButton = createStyledButton("Enter Test Room");
         JButton suggestButton = createStyledButton("Suggest");
         JButton accuseButton = createStyledButton("Accuse");
         JButton endTurnButton = createStyledButton("End Turn");
@@ -290,230 +637,29 @@ public class MainGameFrame extends JFrame {
         endTurnButton.setEnabled(false);
 
         rollButton.addActionListener(e -> {
-            int roll = (int) (Math.random() * 6) + 1;
-            currentDiceRoll[0] = roll;
+            int roll = gameManager.rollDiceForCurrentPlayer();
 
             updateDiceLabel(roll);
-            appendLog("- " + players[currentPlayerIndex[0]] + " rolled a " + roll);
+            appendLog("- " + gameManager.getCurrentPlayer().getName() + " rolled a " + roll);
 
             rollButton.setEnabled(false);
             moveButton.setEnabled(true);
             endTurnButton.setEnabled(true);
         });
 
-        moveButton.addActionListener(e -> {
-            // Placeholder movement logic for the GUI prototype.
-            // Final movement should be controlled by backend game rules.
-            String[] rooms = {
-                    "Kitchen",
-                    "Ballroom",
-                    "Conservatory",
-                    "Dining Room",
-                    "Billiard Room",
-                    "Library",
-                    "Lounge",
-                    "Hall",
-                    "Study"
-            };
-
-            String newRoom = rooms[(int) (Math.random() * rooms.length)];
-
-            int newRow = 4;
-            int newCol = 4;
-
-            switch (newRoom) {
-                case "Kitchen":
-                    newRow = 0;
-                    newCol = 0;
-                    break;
-                case "Ballroom":
-                    newRow = 0;
-                    newCol = 4;
-                    break;
-                case "Conservatory":
-                    newRow = 0;
-                    newCol = 8;
-                    break;
-                case "Dining Room":
-                    newRow = 4;
-                    newCol = 0;
-                    break;
-                case "Billiard Room":
-                    newRow = 4;
-                    newCol = 4;
-                    break;
-                case "Library":
-                    newRow = 4;
-                    newCol = 8;
-                    break;
-                case "Lounge":
-                    newRow = 8;
-                    newCol = 0;
-                    break;
-                case "Hall":
-                    newRow = 8;
-                    newCol = 4;
-                    break;
-                case "Study":
-                    newRow = 8;
-                    newCol = 8;
-                    break;
-            }
-
-            playerPositions[currentPlayerIndex[0]][0] = newRow;
-            playerPositions[currentPlayerIndex[0]][1] = newCol;
-            updateRoomLabel(getRoomNameFromPosition(newRow, newCol));
-
-            refreshBoard();
-
-            appendLog("- " + players[currentPlayerIndex[0]] + " moved to " + newRoom);
-
-            moveButton.setEnabled(false);
-        });
-
-        suggestButton.addActionListener(e -> {
-            // Prototype suggestion popup for GUI testing.
-            // This currently demonstrates the interface flow only.
-            String[] suspects = {
-                    "Miss Scarlett",
-                    "Colonel Mustard",
-                    "Mrs White",
-                    "Mr Green",
-                    "Mrs Peacock",
-                    "Professor Plum"
-            };
-
-            String[] weapons = {
-                    "Candlestick",
-                    "Dagger",
-                    "Lead Pipe",
-                    "Revolver",
-                    "Rope",
-                    "Wrench"
-            };
-
-            JComboBox<String> suspectBox = new JComboBox<>(suspects);
-            JComboBox<String> weaponBox = new JComboBox<>(weapons);
-
-            JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
-            panel.add(new JLabel("Select a suspect:"));
-            panel.add(suspectBox);
-            panel.add(new JLabel("Select a weapon:"));
-            panel.add(weaponBox);
-
-            int result = JOptionPane.showConfirmDialog(
-                    this,
-                    panel,
-                    "Make a Suggestion",
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.PLAIN_MESSAGE
-            );
-
-            if (result == JOptionPane.OK_OPTION) {
-                String selectedSuspect = (String) suspectBox.getSelectedItem();
-                String selectedWeapon = (String) weaponBox.getSelectedItem();
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Suggestion made:\nSuspect: " + selectedSuspect + "\nWeapon: " + selectedWeapon,
-                        "Suggestion Confirmed",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-
-                logArea.append("- " + players[currentPlayerIndex[0]]
-                        + " suggested " + selectedSuspect
-                        + " with the " + selectedWeapon
-                        + " in the " + roomLabel.getText().replace("Current Room: ", "")
-                        + "\n");
-                logScrollBar.setValue(logScrollBar.getMaximum());
-            }
-        });
-
-        accuseButton.addActionListener(e -> {
-            // Prototype accusation popup for GUI testing.
-            // Final accusation handling should be validated by backend logic.
-            String[] suspects = {
-                    "Miss Scarlett",
-                    "Colonel Mustard",
-                    "Mrs White",
-                    "Mr Green",
-                    "Mrs Peacock",
-                    "Professor Plum"
-            };
-
-            String[] weapons = {
-                    "Candlestick",
-                    "Dagger",
-                    "Lead Pipe",
-                    "Revolver",
-                    "Rope",
-                    "Wrench"
-            };
-
-            String[] rooms = {
-                    "Kitchen",
-                    "Ballroom",
-                    "Conservatory",
-                    "Dining Room",
-                    "Billiard Room",
-                    "Library",
-                    "Lounge",
-                    "Hall",
-                    "Study"
-            };
-
-            JComboBox<String> suspectBox = new JComboBox<>(suspects);
-            JComboBox<String> weaponBox = new JComboBox<>(weapons);
-            JComboBox<String> roomBox = new JComboBox<>(rooms);
-
-            JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
-            panel.add(new JLabel("Select a suspect:"));
-            panel.add(suspectBox);
-            panel.add(new JLabel("Select a weapon:"));
-            panel.add(weaponBox);
-            panel.add(new JLabel("Select a room:"));
-            panel.add(roomBox);
-
-            int result = JOptionPane.showConfirmDialog(
-                    this,
-                    panel,
-                    "Make an Accusation",
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.PLAIN_MESSAGE
-            );
-
-            if (result == JOptionPane.OK_OPTION) {
-                String selectedSuspect = (String) suspectBox.getSelectedItem();
-                String selectedWeapon = (String) weaponBox.getSelectedItem();
-                String selectedRoom = (String) roomBox.getSelectedItem();
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Accusation made:\nSuspect: " + selectedSuspect
-                                + "\nWeapon: " + selectedWeapon
-                                + "\nRoom: " + selectedRoom,
-                        "Accusation Confirmed",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-
-                logArea.append("- " + players[currentPlayerIndex[0]]
-                        + " accused " + selectedSuspect
-                        + " with the " + selectedWeapon
-                        + " in the " + selectedRoom
-                        + "\n");
-                logScrollBar.setValue(logScrollBar.getMaximum());
-            }
-        });
+        moveButton.addActionListener(e -> handleMove(moveButton));
+        testRoomButton.addActionListener(e -> handleEnterTestRoom());
+        suggestButton.addActionListener(e -> handleSuggestion());
+        accuseButton.addActionListener(e -> handleAccusation());
 
         endTurnButton.addActionListener(e -> {
-            String oldPlayer = players[currentPlayerIndex[0]];
-            currentPlayerIndex[0] = (currentPlayerIndex[0] + 1) % players.length;
-            String newPlayer = players[currentPlayerIndex[0]];
+            String oldPlayer = gameManager.getCurrentPlayer().getName();
+            gameManager.endTurn();
+            String newPlayer = gameManager.getCurrentPlayer().getName();
 
-            currentDiceRoll[0] = 0;
-
-            updatePlayerLabel(newPlayer);
+            refreshCurrentPlayerInfo();
             resetDiceLabel();
+            refreshBoard();
 
             appendLog("- " + oldPlayer + " ended their turn");
             appendLog("- It is now " + newPlayer + "'s turn");
@@ -553,6 +699,7 @@ public class MainGameFrame extends JFrame {
 
         controlPanel.add(rollButton);
         controlPanel.add(moveButton);
+        controlPanel.add(testRoomButton);
         controlPanel.add(suggestButton);
         controlPanel.add(accuseButton);
         controlPanel.add(endTurnButton);

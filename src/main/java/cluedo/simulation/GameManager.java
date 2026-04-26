@@ -29,13 +29,14 @@ public class GameManager {
         setupPlayers();
         dealCards();
     }
+
     private void setupPlayers() {
-        Player scarlett = new Player("Miss Scarlett","S", 16, 0);
-        Player mustard = new Player("Colonel Mustard","M", 23, 7);
-        Player white = new Player("Mrs White","W", 14, 24);
-        Player green = new Player("Reverend Green","G", 9, 24);
-        Player peacock = new Player("Mrs Peacock","E", 0, 18);
-        Player plum = new Player("Professor Plum","P", 0, 5);
+        Player scarlett = new Player("Miss Scarlett", "S", 16, 0);
+        Player mustard = new Player("Colonel Mustard", "M", 23, 7);
+        Player white = new Player("Mrs White", "W", 14, 24);
+        Player green = new Player("Reverend Green", "G", 9, 24);
+        Player peacock = new Player("Mrs Peacock", "E", 0, 18);
+        Player plum = new Player("Professor Plum", "P", 0, 5);
 
         players.add(scarlett);
         players.add(mustard);
@@ -58,7 +59,6 @@ public class GameManager {
             players.get(index).receiveCard(card);
             index++;
 
-            // loops back to first player until all cards are dealt
             if (index >= players.size()) {
                 index = 0;
             }
@@ -69,12 +69,16 @@ public class GameManager {
         return players.get(currentPlayerIndex);
     }
 
-    public int rollDiceForCurrentPlayer() {
+    public List<Player> getPlayers() {
+        return players;
+    }
 
+    public int rollDiceForCurrentPlayer() {
         if (getCurrentPlayer().isEliminated()) {
             System.out.println("You are eliminated and cannot roll the dice");
             return 0;
         }
+
         int roll = Dice.roll();
         this.spacesRemaining = roll;
         return roll;
@@ -85,8 +89,6 @@ public class GameManager {
     }
 
     public boolean attemptMove(int targetX, int targetY) {
-
-
         if (spacesRemaining <= 0) {
             return false;
         }
@@ -102,19 +104,18 @@ public class GameManager {
         int oldY = currentPlayer.getY();
 
         Tile targetTile = board.getTile(targetX, targetY);
-        Tile currentTile = board.getTile(oldX, oldY);
 
-        //finds if new space is right next to old one
+        if (targetTile == null) {
+            return false;
+        }
+
         int distanceX = Math.abs(targetX - oldX);
         int distanceY = Math.abs(targetY - oldY);
         boolean isAdjacent = (distanceX + distanceY) == 1;
 
         if (!isAdjacent) {
-            //if player is in a room, and target tile is a door,
             if (currentPlayer.getCurrentRoom() != null && targetTile.isDoor()) {
                 RoomTile targetDoor = (RoomTile) targetTile;
-
-                System.out.println("Target Door Object: " + targetDoor.getRoom());
 
                 if (currentPlayer.getCurrentRoom().getName().equals(targetDoor.getRoom().getName())) {
                     currentPlayer.setRoom(null);
@@ -126,11 +127,10 @@ public class GameManager {
             return false;
         }
 
-        //teleports player to room if the tile is a door
         if (targetTile.isDoor()) {
             System.out.println(currentPlayer.getName() + " has entered " + targetTile.getRoom().getName());
 
-            board.clearHallwayTile(oldX,oldY);
+            board.clearHallwayTile(oldX, oldY);
             currentPlayer.setRoom(targetTile.getRoom());
 
             System.out.println(board.toString());
@@ -139,12 +139,10 @@ public class GameManager {
             return true;
         }
 
-
-
         boolean moveAllowed = board.setPlayerOnHallway(targetX, targetY, currentPlayer);
 
-        if (moveAllowed){
-            board.clearHallwayTile(oldX,oldY);
+        if (moveAllowed) {
+            board.clearHallwayTile(oldX, oldY);
             currentPlayer.setCoordinates(targetX, targetY);
 
             spacesRemaining--;
@@ -164,8 +162,12 @@ public class GameManager {
             return false;
         }
 
-        if (currentRoom == null) {return false;}
-        if (!currentRoom.hasSecretPassage()) {return false;}
+        if (currentRoom == null) {
+            return false;
+        }
+        if (!currentRoom.hasSecretPassage()) {
+            return false;
+        }
 
         Room destination = currentRoom.getSecretPassage();
         currentPlayer.setRoom(destination);
@@ -173,23 +175,22 @@ public class GameManager {
         System.out.println(board.toString());
         System.out.println(currentPlayer.getName() + " has used the secret passage to " + destination.getName());
         return true;
-
     }
 
     public void endTurn() {
-        currentPlayerIndex++;
         spacesRemaining = 0;
-        if (eliminatedCount == players.size()){
+
+        if (eliminatedCount == players.size()) {
             System.out.println("All players have been eliminated");
             return;
         }
 
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-
+        do {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        } while (players.get(currentPlayerIndex).isEliminated() && eliminatedCount < players.size());
     }
 
     public Card makeSuggestion(Card suspect, Card weapon, Card room) {
-
         Player accuser = getCurrentPlayer();
         Room currentRoom = accuser.getCurrentRoom();
 
@@ -198,24 +199,22 @@ public class GameManager {
             return null;
         }
 
-        //checks if player is in a room
         if (currentRoom == null) {
             System.out.println("You are not in a room");
             return null;
         }
 
         Player suspectPlayer = getPlayerByName(suspect.getName());
-        //transports suspected player to the room
+
         if (suspectPlayer != null) {
-            board.clearHallwayTile(suspectPlayer.getX(), suspectPlayer.getY());
+            if (suspectPlayer.getCurrentRoom() == null) {
+                board.clearHallwayTile(suspectPlayer.getX(), suspectPlayer.getY());
+            }
             suspectPlayer.setRoom(currentRoom);
-            suspectPlayer.setCoordinates(suspectPlayer.getX(), suspectPlayer.getY());
 
             System.out.println(suspect.getName() + " has been dragged to the " + currentRoom.getName());
-
         }
 
-        //loops through every player, until one has a matching card
         int index = (currentPlayerIndex + 1) % players.size();
 
         while (index != currentPlayerIndex) {
@@ -227,9 +226,11 @@ public class GameManager {
                 spacesRemaining = 0;
                 return revealedCard;
             }
+
             System.out.println(playerBeingChecked.getName() + " has not revealed a card");
             index = (index + 1) % players.size();
         }
+
         System.out.println("Nobody could disprove the suggestion");
         spacesRemaining = 0;
         return null;
@@ -245,32 +246,63 @@ public class GameManager {
             return false;
         }
 
-        if (currentRoom == null){
+        if (currentRoom == null) {
             System.out.println(accuser.getName() + " must be in a room to make an accusation");
             return false;
         }
 
-        System.out.println(accuser.getName() + " has accused " + suspect.getName() + " of committing the murder with a " + weapon.getName() + " in the " + room.getName());
+        System.out.println(accuser.getName() + " has accused " + suspect.getName()
+                + " of committing the murder with a " + weapon.getName()
+                + " in the " + room.getName());
 
         Card winningSuspect = envelope.get(0);
         Card winningWeapon = envelope.get(1);
-        Card winningRoom = envelope. get(2);
+        Card winningRoom = envelope.get(2);
 
-        if (winningSuspect.getName() == suspect.getName() && winningWeapon.getName() == weapon.getName() && winningRoom.getName() == room.getName()){
-            System.out.println(accuser + " has solved the murder and won the game");
+        if (winningSuspect.getName().equals(suspect.getName())
+                && winningWeapon.getName().equals(weapon.getName())
+                && winningRoom.getName().equals(room.getName())) {
+            System.out.println(accuser.getName() + " has solved the murder and won the game");
+            isGameOver = true;
             return true;
         }
-        System.out.println("That accusation was wrong " + accuser.getName() + " has been eliminated from the game");
+
+        System.out.println("That accusation was wrong. " + accuser.getName() + " has been eliminated from the game");
         accuser.setEliminated();
         eliminatedCount += 1;
         spacesRemaining = 0;
         return false;
     }
 
-    //helper method to find player object from name
+    public boolean isGameOver() {
+        return isGameOver;
+    }
+
+    /**
+     * Testing helper: directly places the current player into a named room.
+     */
+    public boolean forceCurrentPlayerIntoRoom(String roomName) {
+        Player currentPlayer = getCurrentPlayer();
+        Room room = board.getRoom(roomName);
+
+        if (room == null) {
+            return false;
+        }
+
+        if (currentPlayer.getCurrentRoom() == null) {
+            board.clearHallwayTile(currentPlayer.getX(), currentPlayer.getY());
+        }
+
+        currentPlayer.setRoom(room);
+        spacesRemaining = 0;
+        return true;
+    }
+
     private Player getPlayerByName(String name) {
         for (Player p : players) {
-            if (p.getName().equals(name)) {return p;}
+            if (p.getName().equals(name)) {
+                return p;
+            }
         }
         return null;
     }
