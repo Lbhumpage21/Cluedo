@@ -207,6 +207,15 @@ public class GameManager {
             if (revealedCard != null) {
                 System.out.println(playerBeingChecked.getName() + " has revealed " + revealedCard.getName());
                 spacesRemaining = 0;
+
+                // Notify all AI players that a disproof occurred
+                for (Player p : players) {
+                    if (p instanceof AIPlayer && !p.getName().equals(accuser.getName())) {
+                        ((AIPlayer) p).observeDisproof(
+                                suspect.getName(), weapon.getName(), room.getName());
+                    }
+                }
+
                 return revealedCard;
             }
 
@@ -306,6 +315,22 @@ public class GameManager {
             }
             return false;
     }
+
+    // Replaces the human players with number of AI players specified
+    public void setupAIPlayers  (int aiCount) {
+        for (int i = players.size() - aiCount; i <players.size(); i++) {
+            Player human = players.get(i);
+            AIPlayer ai = new AIPlayer(human.getName(), human.getTokenChar(), human.getX(), human.getY());
+
+            // Gives them the same cards
+            for (Card card: human.getHand()){
+                ai.receiveCard(card);
+            }
+            players.set(i, ai);
+
+        }
+    }
+
 
     private int[] getDoorForRoom(String roomName) {
         switch (roomName) {

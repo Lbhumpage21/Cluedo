@@ -1,5 +1,6 @@
 package cluedo.ui;
 
+import cluedo.simulation.AIPlayer;
 import cluedo.simulation.Card;
 import cluedo.simulation.GameManager;
 import cluedo.simulation.Player;
@@ -13,7 +14,7 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Main GUI window for the Cluedo prototype.
+ * Main GUI window for Cluedo
  * This frame displays the board, player information, action controls,
  * game log, and cards panel.
  */
@@ -27,24 +28,6 @@ public class MainGameFrame extends JFrame {
     private JTextArea cardsArea;
 
     private GameManager gameManager;
-
-    /**
-     * Maps backend board coordinates to the simplified 9x9 GUI prototype board.
-     * This is still a prototype mapping, not the final real board rendering.
-     */
-    private Point mapBackendPositionToDisplay(int x, int y) {
-
-        if (x == 16 && y == 0) return new Point(1, 0);  // Miss Scarlett
-        if (x == 23 && y == 7) return new Point(7, 6);  // Colonel Mustard
-        if (x == 14 && y == 24) return new Point(7, 2); // Mrs White
-        if (x == 9 && y == 24) return new Point(1, 4);  // Reverend Green
-        if (x == 0 && y == 18) return new Point(0, 8);  // Mrs Peacock
-        if (x == 0 && y == 5) return new Point(8, 4);   // Professor Plum
-
-        if (x < 8 && y < 8) return new Point(Math.max(0, x), Math.max(0, y));
-
-        return new Point(4, 4);
-    }
 
     /**
      * Returns a fixed display point for each room in the GUI board.
@@ -619,8 +602,82 @@ public class MainGameFrame extends JFrame {
         }
     }
 
+    // So the AIPlayer can communicate its actions to the ui log
+    private void runAITurns(JButton rollButton, JButton moveButton, JButton endTurnButton) {
+        Player currentPlayer = gameManager.getCurrentPlayer();
+        while (currentPlayer instanceof AIPlayer && !gameManager.isGameOver()) {
+            AIPlayer ai = (AIPlayer) currentPlayer;
+
+            // Appends the ais actions to the log
+            AIPlayer.AITurnResult result = ai.takeTurn(gameManager);
+            appendLog("- " + ai.getName() + "'s turn (AI)");
+            appendLog("- " + ai.getName() + " rolled a " + result.roll);
+
+            if (result.roomEntered != null) {
+                appendLog("- " + ai.getName() + " moved into " + result.roomEntered);
+            }
+
+            if (result.suspectSuggested != null) {
+                appendLog("- " + ai.getName()
+                        + " suggested " + result.suspectSuggested
+                        + " with the " + result.weaponSuggested
+                        + " in the " + result.roomSuggested
+                        + (result.revealedCard != null
+                        ? ". Revealed: " + result.revealedCard
+                        : ". Nobody could disprove it."));
+            }
+
+            if (result.madeAccusation) {
+                appendLog("- " + ai.getName()
+                        + " accused " + result.accusedSuspect
+                        + " with the " + result.accusedWeapon
+                        + " in the " + result.accusedRoom);
+                if (result.wonGame) {
+                    appendLog("- " + ai.getName() + " solved the murder and won!");
+                    JOptionPane.showMessageDialog(this, ai.getName() + " solved the murder!");
+                    return;
+                } else {
+                    appendLog("- " + ai.getName() + " made a wrong accusation and was eliminated.");
+                }
+            }
+
+
+
+            refreshBoard();
+            refreshCurrentPlayerInfo();
+
+            currentPlayer = gameManager.getCurrentPlayer();
+        }
+        rollButton.setEnabled(true);
+        moveButton.setEnabled(false);
+        endTurnButton.setEnabled(false);
+    }
+
     public MainGameFrame() {
         gameManager = new GameManager();
+
+        // Selects number of AI players
+        String[] aiOptions = {"0","1","2","3","4","5"};
+        String aiChoice = (String) JOptionPane.showInputDialog(
+                this,
+                "How many AI players?",
+                "Game Setup",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                aiOptions,
+                "0"
+        );
+
+        int aiCount;
+        if (aiChoice != null) {
+            aiCount = Integer.parseInt(aiChoice);
+        }
+        else {
+            aiCount = 0;
+        }
+        gameManager.setupAIPlayers(aiCount);
+
+
 
         setTitle("Cluedo");
         setSize(1000, 700);
@@ -739,6 +796,7 @@ public class MainGameFrame extends JFrame {
             rollButton.setEnabled(true);
             moveButton.setEnabled(false);
             endTurnButton.setEnabled(false);
+            runAITurns(rollButton, moveButton, endTurnButton);
         });
 
         backButton.addActionListener(e -> {
