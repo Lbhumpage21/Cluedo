@@ -63,7 +63,9 @@ public class Player {
 
     public Card disproveSuggestion(Card guessedSuspect, Card guessedWeapon, Card guessedRoom) {
         for (Card card : hand) {
-            if (card.equals(guessedSuspect) || card.equals(guessedWeapon) || card.equals(guessedRoom)) {
+            if (card.getName().equals(guessedSuspect.getName())
+                    || card.getName().equals(guessedWeapon.getName())
+                    || card.getName().equals(guessedRoom.getName())) {
                 return card;
             }
         }
@@ -71,3 +73,5 @@ public class Player {
     }
 
 }
+
+

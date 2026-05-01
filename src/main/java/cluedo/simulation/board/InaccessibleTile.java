@@ -1,6 +1,8 @@
 package cluedo.simulation.board;
 
-//Where the player can't move on the board
+/**
+ * Represents the spaces on the board a player cannot move to
+ */
 public class InaccessibleTile extends Tile{
 
     public InaccessibleTile(int x, int y) {

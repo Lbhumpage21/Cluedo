@@ -5,6 +5,13 @@ import cluedo.simulation.Player;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Represents the cluedo game board, consisting of a 2d grid of tiles
+ * The board is 24 tiles wide and 25 tall,
+ * the layout is taken from a string, where each character maps to a tile
+ * Tiles are initialised on construction and do not change
+ */
+
 public class Board {
     private Tile[][] grid;
     private Map<String, Room> rooms;
@@ -13,6 +20,9 @@ public class Board {
     private final int COLS = 24;
     private final int ROWS = 25;
 
+    /**
+     * Creates a 24 by 25 array of tiles and initialises the rooms
+     */
     public Board() {
         //creates a 24 by 25 array of tiles
         grid = new Tile[COLS][ROWS];
@@ -41,6 +51,8 @@ public class Board {
     }
 
     /**
+     * Parses the layout string and populates the grid
+     * <p>
      * Parser for the rooms
      * K = Kitchen, k = Kitchen door
      * B = Ballroom, b = Ballroom door
@@ -120,24 +132,37 @@ public class Board {
             }
         }
     }
-    public int getCols() {
-        return COLS;
-    }
 
-    public int getRows() {
-        return ROWS;
-    }
-
+    /**
+     * Takes coordinates and returns the tile object at them
+     * @param x coordinate
+     * @param y coordinate
+     * @return the tile at the specified coordinates
+     */
     public Tile getTile(int x, int y) {
         if (x < 0 || x >= COLS || y < 0 || y >= ROWS) {
             return null;
         }
         return grid[x][y];
     }
+
+    /**
+     * Takes the rooms name and returns the room object
+     * @param roomName String name of a room
+     * @return the room object specified
+     */
     public Room getRoom(String roomName) {
         return rooms.get(roomName);
     }
 
+    /**
+     * Checks if anything is blocking the tile,
+     * if not the player is set on the tile
+     * @param x coordinate
+     * @param y coordinate
+     * @param player Player object
+     * @return whether player was set on the tile or not
+     */
     public boolean setPlayerOnHallway(int x, int y, Player player) {
         Tile targetTile = getTile(x, y);
 
@@ -163,6 +188,11 @@ public class Board {
         }
     }
 
+    /**
+     * Removes a player from a tile
+     * @param x coordinate
+     * @param y coordinate
+     */
     public void clearHallwayTile(int x, int y) {
         Tile targetTile = grid[x][y];
         if (targetTile instanceof HallwayTile) {

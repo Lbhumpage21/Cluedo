@@ -2,10 +2,12 @@ package cluedo.simulation.board;
 
 import cluedo.simulation.Player;
 
-import javax.print.attribute.standard.Destination;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Contains all the occupants of a room
+ */
 public class Room {
     private String name;
     private List<Player> occupants;

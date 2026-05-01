@@ -8,6 +8,11 @@ import cluedo.simulation.board.Tile;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Game manager for cluedo
+ * Manages the board, players, deck, and turn order
+ * All game actions are handled here
+ */
 public class GameManager {
 
     private Board board;
@@ -48,7 +53,6 @@ public class GameManager {
         for (Player p : players) {
             board.setPlayerOnHallway(p.getX(), p.getY(), p);
         }
-        System.out.println(board.toString());
     }
 
     private void dealCards() {
@@ -65,6 +69,7 @@ public class GameManager {
         }
     }
 
+
     public Player getCurrentPlayer() {
         return players.get(currentPlayerIndex);
     }
@@ -75,7 +80,6 @@ public class GameManager {
 
     public int rollDiceForCurrentPlayer() {
         if (getCurrentPlayer().isEliminated()) {
-            System.out.println("You are eliminated and cannot roll the dice");
             return 0;
         }
 
@@ -88,6 +92,15 @@ public class GameManager {
         return spacesRemaining;
     }
 
+    /**
+     * Attempts to move the current player to the given coordinates
+     * The target must be adjacent to the player's current position
+     * Entering a door tile moves the player into that room and ends movement
+     *
+     * @param targetX target column
+     * @param targetY target row
+     * @return true if the move was successful
+     */
     public boolean attemptMove(int targetX, int targetY) {
         if (spacesRemaining <= 0) {
             return false;
@@ -96,7 +109,6 @@ public class GameManager {
         Player currentPlayer = getCurrentPlayer();
 
         if (currentPlayer.isEliminated()) {
-            System.out.println("You are eliminated and cannot move");
             return false;
         }
 
@@ -111,12 +123,10 @@ public class GameManager {
 
 
         if (targetTile.isDoor()) {
-            System.out.println(currentPlayer.getName() + " has entered " + targetTile.getRoom().getName());
 
             board.clearHallwayTile(oldX, oldY);
             currentPlayer.setRoom(targetTile.getRoom());
 
-            System.out.println(board.toString());
 
             spacesRemaining = 0;
             return true;
@@ -130,18 +140,21 @@ public class GameManager {
 
             spacesRemaining--;
 
-            System.out.println(board.toString());
             return true;
         }
         return false;
     }
+
 
     public boolean useSecretPassage() {
         Player currentPlayer = getCurrentPlayer();
         Room currentRoom = currentPlayer.getCurrentRoom();
 
         if (currentPlayer.isEliminated()) {
-            System.out.println("You are eliminated and cannot move");
+            return false;
+        }
+
+        if(spacesRemaining == 0) {
             return false;
         }
 
@@ -155,8 +168,6 @@ public class GameManager {
         Room destination = currentRoom.getSecretPassage();
         currentPlayer.setRoom(destination);
         spacesRemaining = 0;
-        System.out.println(board.toString());
-        System.out.println(currentPlayer.getName() + " has used the secret passage to " + destination.getName());
         return true;
     }
 
@@ -164,7 +175,6 @@ public class GameManager {
         spacesRemaining = 0;
 
         if (eliminatedCount == players.size()) {
-            System.out.println("All players have been eliminated");
             return;
         }
 
@@ -173,17 +183,26 @@ public class GameManager {
         } while (players.get(currentPlayerIndex).isEliminated() && eliminatedCount < players.size());
     }
 
+    /**
+     * Makes a suggestion from the current player
+     * The suspected player is moved to the current room
+     * Other players hands are checked for a matching card
+     * AI players are notified of the disproof
+     *
+     * @param suspect the suspected character card
+     * @param weapon the suspected weapon card
+     * @param room the suspected room card
+     * @return the card revealed to disprove the suggestion
+     */
     public Card makeSuggestion(Card suspect, Card weapon, Card room) {
         Player accuser = getCurrentPlayer();
         Room currentRoom = accuser.getCurrentRoom();
 
         if (accuser.isEliminated()) {
-            System.out.println("You are eliminated and cannot make a suggestion");
             return null;
         }
 
         if (currentRoom == null) {
-            System.out.println("You are not in a room");
             return null;
         }
 
@@ -194,8 +213,6 @@ public class GameManager {
                 board.clearHallwayTile(suspectPlayer.getX(), suspectPlayer.getY());
             }
             suspectPlayer.setRoom(currentRoom);
-
-            System.out.println(suspect.getName() + " has been dragged to the " + currentRoom.getName());
         }
 
         int index = (currentPlayerIndex + 1) % players.size();
@@ -205,7 +222,6 @@ public class GameManager {
 
             Card revealedCard = playerBeingChecked.disproveSuggestion(suspect, weapon, room);
             if (revealedCard != null) {
-                System.out.println(playerBeingChecked.getName() + " has revealed " + revealedCard.getName());
                 spacesRemaining = 0;
 
                 // Notify all AI players that a disproof occurred
@@ -218,34 +234,35 @@ public class GameManager {
 
                 return revealedCard;
             }
-
-            System.out.println(playerBeingChecked.getName() + " has not revealed a card");
             index = (index + 1) % players.size();
         }
 
-        System.out.println("Nobody could disprove the suggestion");
         spacesRemaining = 0;
         return null;
     }
 
+    /**
+     * Makes an accusation from the current player
+     * Checks the envelope against the accusation
+     * If wrong, eliminates the player
+     *
+     * @param suspect the suspected character card
+     * @param weapon the suspected weapon card
+     * @param room the suspected room card
+     * @return whether the accusation was true or not
+     */
     public boolean makeAccusation(Card suspect, Card weapon, Card room) {
         Player accuser = getCurrentPlayer();
         List<Card> envelope = deck.getEnvelope();
         Room currentRoom = accuser.getCurrentRoom();
 
         if (accuser.isEliminated()) {
-            System.out.println("You are eliminated and cannot make an accusation");
             return false;
         }
 
         if (currentRoom == null) {
-            System.out.println(accuser.getName() + " must be in a room to make an accusation");
             return false;
         }
-
-        System.out.println(accuser.getName() + " has accused " + suspect.getName()
-                + " of committing the murder with a " + weapon.getName()
-                + " in the " + room.getName());
 
         Card winningSuspect = envelope.get(0);
         Card winningWeapon = envelope.get(1);
@@ -254,12 +271,10 @@ public class GameManager {
         if (winningSuspect.getName().equals(suspect.getName())
                 && winningWeapon.getName().equals(weapon.getName())
                 && winningRoom.getName().equals(room.getName())) {
-            System.out.println(accuser.getName() + " has solved the murder and won the game");
             isGameOver = true;
             return true;
         }
 
-        System.out.println("That accusation was wrong. " + accuser.getName() + " has been eliminated from the game");
         accuser.setEliminated();
         eliminatedCount += 1;
         spacesRemaining = 0;
@@ -268,35 +283,6 @@ public class GameManager {
 
     public boolean isGameOver() {
         return isGameOver;
-    }
-
-    /**
-     * Testing helper: directly places the current player into a named room.
-     */
-    public boolean forceCurrentPlayerIntoRoom(String roomName) {
-        Player currentPlayer = getCurrentPlayer();
-        Room room = board.getRoom(roomName);
-
-        if (room == null) {
-            return false;
-        }
-
-        if (currentPlayer.getCurrentRoom() == null) {
-            board.clearHallwayTile(currentPlayer.getX(), currentPlayer.getY());
-        }
-
-        currentPlayer.setRoom(room);
-        spacesRemaining = 0;
-        return true;
-    }
-
-    private Player getPlayerByName(String name) {
-        for (Player p : players) {
-            if (p.getName().equals(name)) {
-                return p;
-            }
-        }
-        return null;
     }
 
     // Decides where a player goes when exiting a room
@@ -331,6 +317,14 @@ public class GameManager {
         }
     }
 
+    private Player getPlayerByName(String name) {
+        for (Player p : players) {
+            if (p.getName().equals(name)) {
+                return p;
+            }
+        }
+        return null;
+    }
 
     private int[] getDoorForRoom(String roomName) {
         switch (roomName) {
@@ -346,9 +340,6 @@ public class GameManager {
             default: return null;
         }
     }
-
-
-
 
     public Card getCardFromDatabase(String cardName) {
         return deck.getCard(cardName);

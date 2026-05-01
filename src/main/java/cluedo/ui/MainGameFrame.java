@@ -377,47 +377,6 @@ public class MainGameFrame extends JFrame {
     }
 
     /**
-     * Testing helper: instantly puts the current player into a selected room.
-     */
-    private void handleEnterTestRoom() {
-        String[] rooms = {
-                "Kitchen",
-                "Ballroom",
-                "Conservatory",
-                "Dining Room",
-                "Billiard Room",
-                "Library",
-                "Lounge",
-                "Hall",
-                "Study"
-        };
-
-        String selectedRoom = (String) JOptionPane.showInputDialog(
-                this,
-                "Select a room for testing:",
-                "Enter Test Room",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                rooms,
-                rooms[0]
-        );
-
-        if (selectedRoom == null) {
-            return;
-        }
-
-        boolean success = gameManager.forceCurrentPlayerIntoRoom(selectedRoom);
-
-        if (success) {
-            refreshCurrentPlayerInfo();
-            refreshBoard();
-            appendLog("- " + gameManager.getCurrentPlayer().getName() + " was placed into " + selectedRoom + " for testing.");
-        } else {
-            JOptionPane.showMessageDialog(this, "Could not place player into room.");
-        }
-    }
-
-    /**
      * Uses backend suggestion logic.
      */
     private void handleSuggestion() {
@@ -755,7 +714,7 @@ public class MainGameFrame extends JFrame {
 
         JButton rollButton = createStyledButton("Roll Dice");
         JButton moveButton = createStyledButton("Move");
-        JButton testRoomButton = createStyledButton("Enter Test Room");
+        JButton secretButton = createStyledButton("Enter Secret Passage");
         JButton suggestButton = createStyledButton("Suggest");
         JButton accuseButton = createStyledButton("Accuse");
         JButton endTurnButton = createStyledButton("End Turn");
@@ -777,9 +736,22 @@ public class MainGameFrame extends JFrame {
         });
 
         moveButton.addActionListener(e -> handleMove(moveButton));
-        testRoomButton.addActionListener(e -> handleEnterTestRoom());
         suggestButton.addActionListener(e -> handleSuggestion());
         accuseButton.addActionListener(e -> handleAccusation());
+
+        secretButton.addActionListener(e -> {
+            boolean used = gameManager.useSecretPassage();
+            if (used) {
+                refreshBoard();
+                refreshCurrentPlayerInfo();
+                appendLog("- " + gameManager.getCurrentPlayer().getName()
+                        + " used the secret passage to "
+                        + gameManager.getCurrentPlayer().getCurrentRoom().getName());
+            } else {
+                JOptionPane.showMessageDialog(this, "You cannot use a secret passage now");
+            }
+        });
+
 
         endTurnButton.addActionListener(e -> {
             String oldPlayer = gameManager.getCurrentPlayer().getName();
@@ -829,7 +801,7 @@ public class MainGameFrame extends JFrame {
 
         controlPanel.add(rollButton);
         controlPanel.add(moveButton);
-        controlPanel.add(testRoomButton);
+        controlPanel.add(secretButton);
         controlPanel.add(suggestButton);
         controlPanel.add(accuseButton);
         controlPanel.add(endTurnButton);
